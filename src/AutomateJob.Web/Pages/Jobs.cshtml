@@ -1,0 +1,290 @@
+@page
+@model JobsModel
+@{
+    ViewData["Title"] = "LinkedIn jobs";
+    ViewData["Wide"] = true;
+}
+
+<section class="page-intro">
+    <p class="eyebrow">LinkedIn</p>
+    <h1>Jobs that fit your resume</h1>
+    <p>GPT-4.1 reads LinkedIn job descriptions for your search and lists the ones that fit your resume.</p>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.FetchMessage))
+{
+    <div class="fetch-row">
+        <p id="fetch-status" class="@(Model.FetchFailed ? "banner" : "notice")" role="status" data-running="@(Model.FetchRunning ? "true" : "false")">@Model.FetchMessage</p>
+        @if (Model.FetchRunning)
+        {
+            <button type="submit" class="cancel-fetch" form="jobs-form" formaction="?handler=CancelFetch">Cancel fetch</button>
+        }
+    </div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="banner" role="alert">@Model.ErrorMessage</p>
+}
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <p class="notice">@Model.Message</p>
+}
+
+<form id="jobs-form" method="post" enctype="multipart/form-data" class="match-form">
+    <input type="hidden" name="p" value="@Model.PageNumber" />
+    <input type="hidden" name="from" value="@Model.PostedFrom?.ToString("yyyy-MM-dd")" />
+    <input type="hidden" name="to" value="@Model.PostedTo?.ToString("yyyy-MM-dd")" />
+    <input type="hidden" name="place" value="@Model.Place" />
+    <label class="field">
+        <span>OpenAI API key</span>
+        <input type="password" name="ApiKey" autocomplete="off" placeholder="sk-..." />
+        <small>@(LlmRoute.OpenAiEnabled() ? "Paste a key that starts with sk-. It stays in this browser session and is not shared with other users." : "Optional while OpenAI is off.")</small>
+        @if (Model.HasSavedKey)
+        {
+            <small>A key starting with sk- is saved for this browser session. Paste a new one only to replace it.</small>
+        }
+        @if (!LlmRoute.OpenAiEnabled())
+        {
+            <small>OpenAI is off. Scoring uses Gemini from GEMINI_API_KEY in the web .env file. Form filling follows OPENAI_ENABLED in agent/.env.</small>
+        }
+        </label>
+    <label class="field">
+        <span>LangSmith API key</span>
+        <input type="password" name="LangSmithApiKey" autocomplete="off" placeholder="lsv2_..." />
+        @if (Model.HasLangSmithKey)
+        {
+            <small>A LangSmith key is saved for this browser session. Each LangGraph step is sent to the automate-job project.</small>
+        }
+        else
+        {
+            <small>Optional. Create a key at smith.langchain.com. It starts with lsv2_. Leave this blank to run without tracing.</small>
+        }
+    </label>
+
+    <label class="field">
+        <span>Stored resumes</span>
+        <select name="SelectedResumeId">
+            <option value="">Paste or upload a new resume</option>
+            @foreach (var resume in Model.Resumes)
+            {
+                if (resume.Id == Model.SelectedResumeId)
+                {
+                    <option value="@resume.Id" selected>@resume.Name</option>
+                }
+                else
+                {
+                    <option value="@resume.Id">@resume.Name</option>
+                }
+            }
+        </select>
+        <small>Saved in the resumes folder. Choose one to fill the text below.</small>
+    </label>
+
+    <div class="columns">
+        <label class="field">
+            <span>Resume file</span>
+            <input type="file" name="ResumeFile" accept=".pdf,.docx,.txt,application/pdf,text/plain" />
+            <small>PDF, DOCX, or TXT. Uploading saves the resume in the folder.</small>
+        </label>
+        <label class="field">
+            <span>Resume text</span>
+            <textarea name="ResumeText" rows="8" placeholder="Paste your resume if you are not uploading a file.">@Model.ResumeText</textarea>
+        </label>
+    </div>
+
+    <div class="columns">
+        <label class="field">
+            <span>Search keywords</span>
+            <input type="text" name="Keywords" value="@Model.Keywords" maxlength="160" placeholder="Backend engineer C# Azure" />
+        </label>
+        <label class="field">
+            <span>Location</span>
+            <input type="text" name="Location" value="@Model.Location" maxlength="120" placeholder="Bengaluru" />
+        </label>
+    </div>
+
+    <label class="check">
+        <input type="checkbox" name="ShowWeakMatches" value="true" @(Model.ShowWeakMatches ? "checked" : "") />
+        <span>Show weak matches below 55</span>
+    </label>
+
+    <div class="actions">
+        <button type="submit" class="secondary" asp-page-handler="LoadResume">Show resume</button>
+        <button type="submit" asp-page-handler="Suggest">Suggest search</button>
+        @if (Model.FetchRunning)
+        {
+            <button type="button" disabled>Fetching…</button>
+            <button type="submit" class="cancel-fetch" asp-page-handler="CancelFetch">Cancel fetch</button>
+        }
+        else
+        {
+            <button type="submit" asp-page-handler="Fetch">Fetch jobs</button>
+        }
+        <button type="submit" class="secondary" asp-page-handler="Display">Score this page</button>
+    </div>
+    <p class="hint">Fetch and Fill open a saved Chrome window on port 9222. Chrome blocks debugging on the everyday profile, so this window keeps its own sign-in. Sign in to LinkedIn there once. Filling pauses between fields and leaves CAPTCHA and Submit for you. The score must be above 60.</p>
+</form>
+
+<partial name="_ResumeGrid" model="Model.Resumes" />
+
+<form method="get" class="date-filter">
+    <label class="field">
+        <span>Posted from</span>
+        <input type="date" name="from" value="@Model.PostedFrom?.ToString("yyyy-MM-dd")" />
+    </label>
+    <label class="field">
+        <span>Posted to</span>
+        <input type="date" name="to" value="@Model.PostedTo?.ToString("yyyy-MM-dd")" />
+    </label>
+    <label class="field">
+        <span>Location</span>
+        <input type="text" name="place" value="@Model.Place" maxlength="120" placeholder="Bengaluru" />
+    </label>
+    <label class="check">
+        <input type="checkbox" name="ShowWeakMatches" value="true" @(Model.ShowWeakMatches ? "checked" : "") />
+        <span>Show weak matches below 55</span>
+    </label>
+    <button type="submit">Filter</button>
+    @if (Model.PostedFrom is not null || Model.PostedTo is not null || !string.IsNullOrWhiteSpace(Model.Place))
+    {
+        <a href="/Jobs@(Model.ShowWeakMatches ? "?ShowWeakMatches=true" : "")">Clear filters</a>
+    }
+</form>
+
+@if (Model.TotalJobs == 0)
+{
+    <p class="empty-list">@(Model.PostedFrom is not null || Model.PostedTo is not null || !string.IsNullOrWhiteSpace(Model.Place) ? "No jobs match that filter." : "No jobs in the list yet.")</p>
+}
+else
+{
+    <p class="list-meta">Showing @(((Model.PageNumber - 1) * Model.PageSize) + 1)–@(((Model.PageNumber - 1) * Model.PageSize) + Model.Jobs.Count) of @Model.TotalJobs</p>
+    <nav class="pager" aria-label="Job pages">
+        @if (Model.PageNumber > 1)
+        {
+            <a href="@Model.PageLink(Model.PageNumber - 1)">Previous</a>
+        }
+        @if (Model.VisiblePages().First() > 1)
+        {
+            <a href="@Model.PageLink(1)">1</a>
+            <span>…</span>
+        }
+        @foreach (var number in Model.VisiblePages())
+        {
+            if (number == Model.PageNumber)
+            {
+                <span class="current" aria-current="page">@number</span>
+            }
+            else
+            {
+                <a href="@Model.PageLink(number)">@number</a>
+            }
+        }
+        @if (Model.VisiblePages().Last() < Model.PageCount)
+        {
+            <span>…</span>
+            <a href="@Model.PageLink(Model.PageCount)">@Model.PageCount</a>
+        }
+        @if (Model.PageNumber < Model.PageCount)
+        {
+            <a href="@Model.PageLink(Model.PageNumber + 1)">Next</a>
+        }
+    </nav>
+    <div class="actions list-actions">
+        <button type="submit" form="jobs-form" asp-page-handler="EvaluateSelected">Evaluate selected</button>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th class="check-col"><input type="checkbox" class="row-check" id="select-all-jobs" aria-label="Select all jobs on this page" /></th>
+                    <th>Title</th>
+                    <th>Company</th>
+                    <th>Location</th>
+                    <th>Posted</th>
+                    <th>Apply</th>
+                    <th>Score</th>
+                    <th>Covered</th>
+                    <th>Missing</th>
+                    <th>Link</th>
+                    <th>Status</th>
+                    <th class="row-actions"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var job in Model.Jobs)
+                {
+                    <tr>
+                        <td class="check-col"><input type="checkbox" class="row-check" form="jobs-form" name="SelectedJobUrls" value="@job.JobUrl" aria-label="Select @job.Title" /></td>
+                        <td>@job.Title</td>
+                        <td>@job.Company</td>
+                        <td>@job.Location</td>
+                        <td>@(string.IsNullOrWhiteSpace(job.Posted) ? "—" : job.Posted)</td>
+                        <td>@(string.IsNullOrWhiteSpace(job.ApplyMethod) ? "—" : job.ApplyMethod)</td>
+                        <td>@(job.Score?.ToString() ?? "Not scored")</td>
+                        <td>@string.Join(", ", job.Covered)</td>
+                        <td>@string.Join(", ", job.Missing)</td>
+                        <td><a href="@job.JobUrl" target="_blank" rel="noopener">Open</a></td>
+                        <td>@Model.ApplyStatus(job)</td>
+                        <td class="row-actions">
+                            <button type="submit" class="secondary row-action" form="jobs-form" asp-page-handler="Evaluate" name="EvaluateUrl" value="@job.JobUrl">Evaluate</button>
+                            @if (ApplicationForm.CanApply(job.Score))
+                            {
+                                <button type="submit" class="row-action" form="jobs-form" asp-page-handler="Apply" name="ApplyUrl" value="@job.JobUrl">Fill with LangGraph</button>
+                            }
+                        </td>
+                    </tr>
+                    @if (!string.IsNullOrWhiteSpace(job.Summary) || !string.IsNullOrWhiteSpace(job.Error) || Model.ApplicationNote(job) is not null)
+                    {
+                        <tr class="detail">
+                            <td colspan="12">@(job.Error ?? job.Summary) @Model.ApplicationNote(job)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <nav class="pager" aria-label="Job pages">
+        @if (Model.PageNumber > 1)
+        {
+            <a href="@Model.PageLink(Model.PageNumber - 1)">Previous</a>
+        }
+        @if (Model.PageNumber < Model.PageCount)
+        {
+            <a href="@Model.PageLink(Model.PageNumber + 1)">Next</a>
+        }
+    </nav>
+}
+
+<script>
+    (function () {
+        const all = document.getElementById("select-all-jobs");
+        if (!all) return;
+        const boxes = () => [...document.querySelectorAll("input[name='SelectedJobUrls']")];
+        all.addEventListener("change", function () {
+            boxes().forEach(function (box) { box.checked = all.checked; });
+        });
+    })();
+</script>
+@if (Model.FetchRunning)
+{
+    <script>
+        (function () {
+            const notice = document.getElementById("fetch-status");
+            if (!notice) return;
+            const timer = setInterval(async function () {
+                try {
+                    const response = await fetch("/Jobs?handler=FetchStatus", { headers: { "Accept": "application/json" } });
+                    if (!response.ok) return;
+                    const status = await response.json();
+                    notice.textContent = status.message || notice.textContent;
+                    notice.className = status.failed ? "banner" : "notice";
+                    if (status.running) return;
+                    clearInterval(timer);
+                    const active = document.activeElement;
+                    const typing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT");
+                    if (!typing) location.reload();
+                } catch (e) { }
+            }, 3000);
+        })();
+    </script>
+}

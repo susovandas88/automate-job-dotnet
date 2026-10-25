@@ -1,0 +1,106 @@
+@page
+@model ProfileModel
+@{
+    ViewData["Title"] = "Application details";
+}
+
+<section class="page-intro">
+    <p class="eyebrow">Company forms</p>
+    <h1>Details for job applications</h1>
+    <p>Save the answers you want typed into company application forms. Leave a box empty when you do not want that answer used.</p>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <p class="notice">@Model.Message</p>
+}
+
+<form method="post" class="match-form">
+    <div class="columns">
+        <label class="field">
+            <span>First name</span>
+            <input asp-for="Profile.FirstName" maxlength="80" autocomplete="given-name" />
+        </label>
+        <label class="field">
+            <span>Last name</span>
+            <input asp-for="Profile.LastName" maxlength="80" autocomplete="family-name" />
+        </label>
+    </div>
+    <div class="columns">
+        <label class="field">
+            <span>Email</span>
+            <input asp-for="Profile.Email" type="email" maxlength="160" autocomplete="email" />
+        </label>
+        <label class="field">
+            <span>Phone</span>
+            <input asp-for="Profile.Phone" maxlength="40" autocomplete="tel" />
+        </label>
+    </div>
+    <div class="columns">
+        <label class="field">
+            <span>City</span>
+            <input asp-for="Profile.City" maxlength="80" autocomplete="address-level2" />
+        </label>
+        <label class="field">
+            <span>Country</span>
+            <input asp-for="Profile.Country" maxlength="80" autocomplete="country-name" />
+        </label>
+    </div>
+    <div class="columns">
+        <label class="field">
+            <span>LinkedIn URL</span>
+            <input asp-for="Profile.LinkedInUrl" maxlength="200" placeholder="https://www.linkedin.com/in/..." />
+        </label>
+        <label class="field">
+            <span>Website or portfolio</span>
+            <input asp-for="Profile.Website" maxlength="200" placeholder="https://" />
+        </label>
+    </div>
+    <div class="columns">
+        <label class="field">
+            <span>Current job title</span>
+            <input asp-for="Profile.CurrentTitle" maxlength="120" />
+        </label>
+        <label class="field">
+            <span>Years of experience</span>
+            <input asp-for="Profile.YearsOfExperience" maxlength="20" placeholder="12" />
+        </label>
+    </div>
+    <div class="columns">
+        <label class="field">
+            <span>Work authorization</span>
+            <input asp-for="Profile.WorkAuthorization" maxlength="120" placeholder="Authorized to work in India" />
+        </label>
+        <label class="field">
+            <span>Notice period</span>
+            <input asp-for="Profile.NoticePeriod" maxlength="80" placeholder="30 days" />
+        </label>
+    </div>
+    <div class="columns">
+        <label class="field">
+            <span>Expected salary</span>
+            <input asp-for="Profile.ExpectedSalary" maxlength="80" />
+        </label>
+        <label class="field">
+            <span>Willing to relocate</span>
+            <input asp-for="Profile.WillingToRelocate" maxlength="40" placeholder="Yes or No" />
+        </label>
+    </div>
+    <label class="field">
+        <span>Education</span>
+        <textarea asp-for="Profile.Education" class="short-text" maxlength="4000" placeholder="Degree, school, and year"></textarea>
+    </label>
+    <label class="field">
+        <span>Work history</span>
+        <textarea asp-for="Profile.WorkHistory" class="short-text" maxlength="8000" placeholder="Company, title, and dates"></textarea>
+    </label>
+    <label class="field">
+        <span>Skills</span>
+        <textarea asp-for="Profile.Skills" class="short-text" maxlength="4000"></textarea>
+    </label>
+    <label class="field">
+        <span>Other answers</span>
+        <textarea asp-for="Profile.AdditionalDetails" class="short-text" maxlength="4000" placeholder="Anything else a company form should use, such as preferred location or start date."></textarea>
+    </label>
+    <button type="submit">Save details</button>
+</form>

@@ -1,0 +1,28 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<section class="page-intro">
+    <p class="eyebrow">Job match</p>
+    <h1>Sign in</h1>
+    <p>Sign in with your account. You see only the jobs saved for that user.</p>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="banner" role="alert">@Model.ErrorMessage</p>
+}
+
+<form method="post" class="match-form" asp-route-returnUrl="@Model.ReturnUrl">
+    <label class="field">
+        <span>Username</span>
+        <input asp-for="Username" autocomplete="username" />
+    </label>
+    <label class="field">
+        <span>Password</span>
+        <input asp-for="Password" type="password" autocomplete="current-password" />
+    </label>
+    <button type="submit">Sign in</button>
+</form>

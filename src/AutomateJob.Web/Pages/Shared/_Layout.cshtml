@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Job Match</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="@(ViewData["Wide"] as bool? == true ? "wide" : null)">
+    <header class="topbar">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="brand" asp-page="/Index">Job Match</a>
+            <nav class="nav">
+                <a asp-page="/Index">One job</a>
+                <a asp-page="/Jobs">LinkedIn jobs</a>
+                <a asp-page="/Naukri">Naukri jobs</a>
+                <a asp-page="/Profile">Application details</a>
+                <a asp-page="/Unmapped">Unmapped questions</a>
+                @if (User.IsInRole(AutomateJob.Web.Auth.AccountStore.AdminRole) || User.IsInRole(AutomateJob.Web.Auth.AccountStore.SuperUserRole))
+                {
+                    <a asp-page="/Accounts">Users and roles</a>
+                }
+                <span class="nav-user">@User.Identity?.Name · @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                <form method="post" asp-page="/Logout" class="nav-signout">
+                    <button type="submit" class="row-action">Sign out</button>
+                </form>
+            </nav>
+        }
+        else
+        {
+            <span class="brand">Job Match</span>
+        }
+    </header>
+    <main>
+        @RenderBody()
+    </main>
+</body>
+</html>

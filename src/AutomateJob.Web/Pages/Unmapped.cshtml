@@ -1,0 +1,35 @@
+@page
+@model UnmappedModel
+@{
+    ViewData["Title"] = "Unmapped questions";
+}
+
+<section class="page-intro">
+    <p class="eyebrow">Company forms</p>
+    <h1>Questions the form could not map</h1>
+    <p>Answer these yourself. The answer is saved and used the next time the same question appears. @Model.SavedAnswerCount saved so far.</p>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <p class="notice">@Model.Message</p>
+}
+
+@if (Model.PendingAnswers.Count == 0)
+{
+    <p class="empty-list">No unmapped questions right now.</p>
+}
+else
+{
+    <form method="post" class="match-form">
+        @foreach (var pending in Model.PendingAnswers)
+        {
+            <label class="field">
+                <span>@pending.Question</span>
+                <input type="hidden" name="bankQuestion" value="@pending.Question" />
+                <input type="text" name="bankAnswer" maxlength="500" />
+            </label>
+        }
+        <button type="submit">Save answers</button>
+    </form>
+}

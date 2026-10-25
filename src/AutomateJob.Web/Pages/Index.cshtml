@@ -1,0 +1,168 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Resume match";
+}
+
+<section class="page-intro">
+    <p class="eyebrow">Job match</p>
+    <h1>See how your resume fits a job</h1>
+    <p>Upload or paste your resume and a job description. GPT-4.1 reads both and scores how well the experience fits the role.</p>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="banner" role="alert">@Model.ErrorMessage</p>
+}
+
+<form method="post" enctype="multipart/form-data" class="match-form">
+    <label class="field">
+        <span>OpenAI API key</span>
+        <input type="password" name="ApiKey" autocomplete="off" placeholder="sk-..." />
+        <small>@(LlmRoute.OpenAiEnabled() ? "Paste a key that starts with sk-. It stays in this browser session and is not shared with other users." : "Optional while OpenAI is off.")</small>
+        @if (Model.HasSavedKey)
+        {
+            <small>A key is saved for this browser session. Paste a new one only if you want to replace it.</small>
+        }
+        @if (!LlmRoute.OpenAiEnabled())
+        {
+            <small>OpenAI is off. Scoring uses Gemini from GEMINI_API_KEY in the web .env file.</small>
+        }
+        </label>
+
+    <label class="field">
+        <span>Stored resumes</span>
+        <select name="SelectedResumeId">
+            <option value="">Paste or upload a new resume</option>
+            @foreach (var resume in Model.Resumes)
+            {
+                if (resume.Id == Model.SelectedResumeId)
+                {
+                    <option value="@resume.Id" selected>@resume.Name</option>
+                }
+                else
+                {
+                    <option value="@resume.Id">@resume.Name</option>
+                }
+            }
+        </select>
+        <small>Saved in the resumes folder. Choose one, then show it below.</small>
+    </label>
+
+    <div class="columns">
+        <label class="field">
+            <span>Resume file</span>
+            <input type="file" name="ResumeFile" accept=".pdf,.docx,.txt,application/pdf,text/plain" />
+            <small>PDF, DOCX, or TXT. Uploading saves the resume in the folder.</small>
+        </label>
+        <label class="field">
+            <span>Job title</span>
+            <input type="text" name="JobTitle" value="@Model.JobTitle" placeholder="Backend engineer" maxlength="120" />
+            <small>Optional. Sent to the model with the description.</small>
+        </label>
+    </div>
+
+    <div class="columns">
+        <label class="field">
+            <span>Resume text</span>
+            <textarea name="ResumeText" rows="16" placeholder="Paste your resume if you are not uploading a file.">@Model.ResumeText</textarea>
+        </label>
+        <label class="field">
+            <span>Job description</span>
+            <textarea name="JobDescription" rows="16" required placeholder="Paste the full job description, including requirements.">@Model.JobDescription</textarea>
+        </label>
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="secondary" asp-page-handler="LoadResume">Show resume</button>
+        <button type="submit">Match resume</button>
+    </div>
+</form>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <p class="notice">@Model.Message</p>
+}
+
+<partial name="_ResumeGrid" model="Model.Resumes" />
+
+@if (Model.Report is { } report)
+{
+    <section class="result" aria-live="polite">
+        <div class="score-block">
+            <p class="score">@report.Score</p>
+            <div>
+                <p class="verdict">@report.Verdict</p>
+                <p class="model-name">Scored by @report.ScoredBy</p>
+                <p>@report.Summary</p>
+            </div>
+        </div>
+
+        <div class="lists">
+            <div>
+                <h2>Covered</h2>
+                @if (report.Matched.Count == 0)
+                {
+                    <p class="empty">The model did not list strengths that meet this role.</p>
+                }
+                else
+                {
+                    <ul>
+                        @foreach (var item in report.Matched)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                }
+            </div>
+            <div>
+                <h2>Missing</h2>
+                @if (report.Missing.Count == 0)
+                {
+                    <p class="empty">The model did not list missing requirements.</p>
+                }
+                else
+                {
+                    <ul>
+                        @foreach (var item in report.Missing)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        @if (report.HasPreferred)
+        {
+            <div class="lists preferred">
+                <div>
+                    <h2>Preferred skills you have</h2>
+                    <ul>
+                        @foreach (var item in report.PreferredMatched)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                    @if (report.PreferredMatched.Count == 0)
+                    {
+                        <p class="empty">None yet.</p>
+                    }
+                </div>
+                <div>
+                    <h2>Preferred skills missing</h2>
+                    <ul>
+                        @foreach (var item in report.PreferredMissing)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                    @if (report.PreferredMissing.Count == 0)
+                    {
+                        <p class="empty">None.</p>
+                    }
+                </div>
+            </div>
+        }
+    </section>
+}

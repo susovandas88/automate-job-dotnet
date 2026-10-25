@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      DATA_DIR: /data
+      HEADLESS: "true"
+      PYTHON: /opt/agent-venv/bin/python
+      CHROME_PATH: /usr/local/bin/headless-chromium
+      OPENAI_ENABLED: "true"
+    env_file:
+      - path: compose.env
+        required: false
+    volumes:
+      - app-data:/data
+
+volumes:
+  app-data:

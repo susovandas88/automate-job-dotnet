@@ -1,0 +1,68 @@
+@page "{id:long?}"
+@using AutomateJob.Web.Auth
+@model UserDetailModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Add user" : "User detail";
+}
+
+<section class="page-intro">
+    <p class="eyebrow">Access</p>
+    <h1>@(Model.IsNew ? "Add user" : "User detail")</h1>
+    <p>@(Model.IsNew ? "Create an account and bind it to a role. That person sees only their own jobs." : Model.CanChangePassword ? "Change this account. A Super user can set a new password. Leave the password blank to keep the current one." : "Change this account. Only a Super user can set a new password.")</p>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <p class="notice">@Model.Message</p>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="banner" role="alert">@Model.ErrorMessage</p>
+}
+
+<form method="post" class="match-form" autocomplete="off">
+    <label class="field">
+        <span>Username</span>
+        <input asp-for="Username" maxlength="80" autocomplete="off" />
+    </label>
+    <label class="field">
+        <span>Role</span>
+        @if (Model.EditingSelf)
+        {
+            <input value="@Model.Role" readonly />
+            <small>Your own role stays @Model.Role while you are signed in as this account.</small>
+        }
+        else
+        {
+            <select asp-for="Role">
+                @foreach (var role in Model.Roles)
+                {
+                    if (!Model.CanChangePassword && role.Name == AccountStore.SuperUserRole && Model.Role != AccountStore.SuperUserRole)
+                    {
+                        continue;
+                    }
+                    <option value="@role.Name">@role.Name</option>
+                }
+            </select>
+        }
+    </label>
+    @if (Model.IsNew || Model.CanChangePassword)
+    {
+        <label class="field">
+            <span>Password</span>
+            <input asp-for="Password" type="password" autocomplete="new-password" />
+            <small>@(Model.IsNew ? "At least 8 characters." : "Leave this blank to keep the current password.")</small>
+        </label>
+    }
+    else
+    {
+        <p class="hint">Only a Super user can change this password.</p>
+    }
+    @if (!Model.IsNew)
+    {
+        <p class="hint">This user has @Model.JobCount saved jobs.</p>
+    }
+    <button type="submit">@(Model.IsNew ? "Add user" : "Save")</button>
+    <a asp-page="/Accounts">Back to users and roles</a>
+</form>

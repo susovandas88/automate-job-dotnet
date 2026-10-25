@@ -1,0 +1,81 @@
+@model IReadOnlyList<AutomateJob.Web.Matching.StoredResume>
+<section class="resume-grid" aria-labelledby="stored-resumes-heading">
+    <h2 id="stored-resumes-heading">Stored resumes</h2>
+    @if (Model.Count == 0)
+    {
+        <p class="empty-list">No resumes saved yet.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Saved</th>
+                        <th class="resume-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var resume in Model)
+                    {
+                        var saved = DateTimeOffset.TryParse(resume.SavedAt, out var parsed)
+                            ? parsed.ToLocalTime().ToString("d MMM yyyy, h:mm tt")
+                            : resume.SavedAt;
+                        <tr>
+                            <td>@resume.Name</td>
+                            <td>@saved</td>
+                            <td class="resume-actions">
+                                <form method="post" asp-page-handler="DeleteResume" data-resume-name="@resume.Name">
+                                    <input type="hidden" name="DeleteResumeId" value="@resume.Id" />
+                                    <button type="submit" class="secondary row-action">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <dialog id="resume-delete-dialog" class="confirm-dialog">
+            <p id="resume-delete-question">Are you sure you want to delete this resume?</p>
+            <div class="actions">
+                <button type="button" id="resume-delete-yes">Yes</button>
+                <button type="button" id="resume-delete-no" class="secondary">No</button>
+            </div>
+        </dialog>
+        <script>
+            (function () {
+                const dialog = document.getElementById("resume-delete-dialog");
+                const question = document.getElementById("resume-delete-question");
+                const yes = document.getElementById("resume-delete-yes");
+                const no = document.getElementById("resume-delete-no");
+                let pending = null;
+                document.querySelectorAll(".resume-grid form").forEach(function (form) {
+                    form.addEventListener("submit", function (event) {
+                        if (form.dataset.confirmed === "true") {
+                            return;
+                        }
+                        event.preventDefault();
+                        pending = form;
+                        const name = form.dataset.resumeName || "this resume";
+                        question.textContent = "Are you sure you want to delete " + name + "?";
+                        dialog.showModal();
+                    });
+                });
+                yes.addEventListener("click", function () {
+                    if (!pending) {
+                        dialog.close();
+                        return;
+                    }
+                    pending.dataset.confirmed = "true";
+                    dialog.close();
+                    pending.requestSubmit();
+                });
+                no.addEventListener("click", function () {
+                    pending = null;
+                    dialog.close();
+                });
+            })();
+        </script>
+    }
+</section>

@@ -1,0 +1,61 @@
+@page
+@model AccountsModel
+@{
+    ViewData["Title"] = "Users and roles";
+}
+
+<section class="page-intro">
+    <p class="eyebrow">Access</p>
+    <h1>Users and roles</h1>
+    <p>Each user is bound to one role and sees only the jobs saved for that user. A Super user can change another user's password from that user's detail page.</p>
+</section>
+
+<h2 class="account-heading">Roles</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var role in Model.Roles)
+            {
+                <tr>
+                    <td>@role.Name</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<h2 class="account-heading">Users</h2>
+<p><a asp-page="/UserDetail">Add user</a></p>
+@if (Model.Users.Count == 0)
+{
+    <p class="empty-list">No users yet.</p>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Jobs</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td><a asp-page="/UserDetail" asp-route-id="@user.Id">@user.Username</a></td>
+                        <td>@user.Role</td>
+                        <td>@user.JobCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
