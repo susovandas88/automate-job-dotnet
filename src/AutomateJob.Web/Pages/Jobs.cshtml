@@ -138,7 +138,20 @@
     </label>
     <label class="field">
         <span>Location</span>
-        <input type="text" name="place" value="@Model.Place" maxlength="120" placeholder="Bengaluru" />
+        <select name="place">
+            <option value="">All locations</option>
+            @foreach (var place in Model.Places)
+            {
+                if (string.Equals(place, Model.Place, StringComparison.OrdinalIgnoreCase))
+                {
+                    <option value="@place" selected>@place</option>
+                }
+                else
+                {
+                    <option value="@place">@place</option>
+                }
+            }
+        </select>
     </label>
     <label class="check">
         <input type="checkbox" name="ShowWeakMatches" value="true" @(Model.ShowWeakMatches ? "checked" : "") />

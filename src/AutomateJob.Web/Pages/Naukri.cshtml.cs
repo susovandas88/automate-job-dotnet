@@ -79,6 +79,8 @@ public class NaukriModel : PageModel
     [BindProperty(SupportsGet = true, Name = "place")]
     public string? Place { get; set; }
 
+    public IReadOnlyList<string> Places { get; private set; } = [];
+
     public int PageCount { get; private set; } = 1;
 
     public int TotalJobs { get; private set; }
@@ -435,7 +437,9 @@ public class NaukriModel : PageModel
         }
 
         Place = string.IsNullOrWhiteSpace(Place) ? null : Place.Trim();
-        var jobs = JobListQuery.Apply(_store.ListBySource(UserId, "Naukri"), ShowWeakMatches, PostedFrom, PostedTo, Place, PageNumber, out var total, out var pageCount, out var pageNumber);
+        var saved = _store.ListBySource(UserId, "Naukri");
+        Places = JobListQuery.Locations(saved, Place);
+        var jobs = JobListQuery.Apply(saved, ShowWeakMatches, PostedFrom, PostedTo, Place, PageNumber, out var total, out var pageCount, out var pageNumber);
         var scores = _evaluations.ByUrl(UserId);
         Jobs = jobs.Select(job => job.Score is not null || !scores.TryGetValue(job.JobUrl, out var evaluation)
             ? job

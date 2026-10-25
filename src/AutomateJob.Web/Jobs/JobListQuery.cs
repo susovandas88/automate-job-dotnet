@@ -57,6 +57,23 @@ public static class JobListQuery
         return to is null || posted <= to;
     }
 
+    public static IReadOnlyList<string> Locations(IEnumerable<StoredJob> jobs, string? selected = null)
+    {
+        var places = jobs
+            .Select(job => job.Location.Trim())
+            .Where(location => location.Length > 0)
+            .ToList();
+        if (!string.IsNullOrWhiteSpace(selected))
+        {
+            places.Add(selected.Trim());
+        }
+
+        return places
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(location => location, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     internal static bool InLocation(StoredJob job, string? location)
     {
         if (string.IsNullOrWhiteSpace(location))

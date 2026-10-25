@@ -321,9 +321,12 @@ button:disabled {
   flex: 0 0 auto;
 }
 
-.date-filter input[type="date"],
-.date-filter input[type="text"] {
+.date-filter input[type="date"] {
   width: 11rem;
+}
+
+.date-filter select {
+  width: 16rem;
 }
 
 .date-filter .check {
