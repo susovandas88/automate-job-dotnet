@@ -21,6 +21,7 @@ public class JobsModel : PageModel
     private readonly AnswersBank _answers;
     private readonly LinkedInSession _session;
     private readonly JobFetchRunner _fetch;
+    private readonly SearchLocationStore _searches;
 
     private long UserId => SignedInUser.Id(User);
 
@@ -35,7 +36,8 @@ public class JobsModel : PageModel
         ApplicantProfileStore profiles,
         AnswersBank answers,
         LinkedInSession session,
-        JobFetchRunner fetch)
+        JobFetchRunner fetch,
+        SearchLocationStore searches)
     {
         _matcher = matcher;
         _resumeReader = resumeReader;
@@ -48,6 +50,7 @@ public class JobsModel : PageModel
         _answers = answers;
         _session = session;
         _fetch = fetch;
+        _searches = searches;
     }
 
     [BindProperty]
@@ -227,6 +230,8 @@ public class JobsModel : PageModel
             LoadJobs();
             return Page();
         }
+
+        _searches.Remember(UserId, "LinkedIn", Location);
 
         if (!_fetch.TryStart(new JobFetchRequest(
             Keywords.Trim(),
@@ -852,7 +857,7 @@ public class JobsModel : PageModel
 
         Place = string.IsNullOrWhiteSpace(Place) ? null : Place.Trim();
         var saved = _store.ListBySource(UserId, "LinkedIn");
-        Places = JobListQuery.Locations(saved, Place);
+        Places = _searches.List(UserId, "LinkedIn", Place);
         var jobs = JobListQuery.Apply(saved, ShowWeakMatches, PostedFrom, PostedTo, Place, PageNumber, out var total, out var pageCount, out var pageNumber);
         var scores = _evaluations.ByUrl(UserId);
         Jobs = jobs.Select(job => ApplyStoredScore(job, scores)).ToList();

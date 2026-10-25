@@ -91,6 +91,7 @@ builder.Services.AddHttpClient<AutomateJob.Web.Jobs.LinkedInJobBoard>(client =>
     client.Timeout = TimeSpan.FromSeconds(40);
 });
 builder.Services.AddSingleton<AutomateJob.Web.Jobs.JobStore>();
+builder.Services.AddSingleton<AutomateJob.Web.Jobs.SearchLocationStore>();
 builder.Services.AddSingleton<AutomateJob.Web.Jobs.EvaluationStore>();
 builder.Services.AddSingleton<AutomateJob.Web.Jobs.ApplicationStore>();
 builder.Services.AddSingleton<AutomateJob.Web.Jobs.ApplicantProfileStore>();

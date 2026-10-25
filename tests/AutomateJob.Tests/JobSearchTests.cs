@@ -35,6 +35,24 @@ public class JobSearchTests
     }
 
     [Fact]
+    public void Search_locations_are_saved_once_and_listed_for_that_board()
+    {
+        var database = Path.Combine(Path.GetTempPath(), "search-locations-" + Guid.NewGuid().ToString("N") + ".sqlite");
+        var store = new SearchLocationStore(database);
+
+        store.Remember(1, "LinkedIn", "  Bengaluru ");
+        store.Remember(1, "LinkedIn", "bengaluru");
+        store.Remember(1, "LinkedIn", "Dubai");
+        store.Remember(1, "Naukri", "Pune");
+        store.Remember(1, "LinkedIn", "   ");
+        store.Remember(2, "LinkedIn", "Hyderabad");
+
+        Assert.Equal(["bengaluru", "Dubai"], store.List(1, "LinkedIn"));
+        Assert.Equal(["Pune"], store.List(1, "Naukri"));
+        Assert.Equal(["Dubai", "Hyderabad"], store.List(2, "LinkedIn", "Dubai"));
+    }
+
+    [Fact]
     public void Job_list_pages_and_filters_by_posted_date()
     {
         var jobs = Enumerable.Range(1, 30)

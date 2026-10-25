@@ -17,6 +17,7 @@ public class NaukriModel : PageModel
     private readonly JobStore _store;
     private readonly EvaluationStore _evaluations;
     private readonly NaukriFetchRunner _fetch;
+    private readonly SearchLocationStore _searches;
 
     private long UserId => SignedInUser.Id(User);
 
@@ -27,7 +28,8 @@ public class NaukriModel : PageModel
         NaukriJobBoard jobs,
         JobStore store,
         EvaluationStore evaluations,
-        NaukriFetchRunner fetch)
+        NaukriFetchRunner fetch,
+        SearchLocationStore searches)
     {
         _matcher = matcher;
         _resumeReader = resumeReader;
@@ -36,6 +38,7 @@ public class NaukriModel : PageModel
         _store = store;
         _evaluations = evaluations;
         _fetch = fetch;
+        _searches = searches;
     }
 
     [BindProperty]
@@ -161,6 +164,8 @@ public class NaukriModel : PageModel
             LoadJobs();
             return Page();
         }
+
+        _searches.Remember(UserId, "Naukri", Location);
 
         var langsmithKey = AgentEnvFile.LangSmithKey(HttpContext.Session.GetString("LangSmithApiKey"));
         if (!_fetch.TryStart(new JobFetchRequest(
@@ -438,7 +443,7 @@ public class NaukriModel : PageModel
 
         Place = string.IsNullOrWhiteSpace(Place) ? null : Place.Trim();
         var saved = _store.ListBySource(UserId, "Naukri");
-        Places = JobListQuery.Locations(saved, Place);
+        Places = _searches.List(UserId, "Naukri", Place);
         var jobs = JobListQuery.Apply(saved, ShowWeakMatches, PostedFrom, PostedTo, Place, PageNumber, out var total, out var pageCount, out var pageNumber);
         var scores = _evaluations.ByUrl(UserId);
         Jobs = jobs.Select(job => job.Score is not null || !scores.TryGetValue(job.JobUrl, out var evaluation)
